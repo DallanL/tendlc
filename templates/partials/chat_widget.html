@@ -1,0 +1,64 @@
+<div class="bg-white w-80 h-96 rounded-2xl shadow-2xl flex flex-col border border-gray-200 overflow-hidden">
+    <div class="bg-indigo-600 p-3 text-white flex justify-between items-center">
+        <span class="font-bold flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20"><path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z"></path></svg>
+            Compliance AI
+        </span>
+        <button onclick="document.getElementById('chat-widget').classList.toggle('hidden')" class="text-indigo-200 hover:text-white">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </button>
+    </div>
+    
+    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 text-sm scroll-smooth">
+        <div class="bg-gray-100 p-2 rounded-lg max-w-[80%]">
+            Hello! I'm your 10DLC compliance assistant. Ask me about TCR rules or CTIA guidelines.
+        </div>
+    </div>
+
+    <div class="p-3 border-t">
+        <form hx-get="/chat-stream" hx-ext="sse" sse-connect="/chat-stream" sse-swap="message" hx-swap="none" hx-trigger="submit" class="flex gap-2">
+            <input id="chat-input" name="message" type="text" placeholder="Type a question..." class="flex-1 border rounded-full px-3 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500">
+            <button type="submit" class="bg-indigo-600 text-white p-2 rounded-full hover:bg-indigo-700 transition">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    let currentAiMsg = null;
+
+    document.body.addEventListener('htmx:sseMessage', function (e) {
+        const data = JSON.parse(e.detail.data);
+        const chatMessages = document.getElementById('chat-messages');
+        
+        if (data.content === "[DONE]") {
+            currentAiMsg = null;
+            return;
+        }
+
+        if (!currentAiMsg) {
+            currentAiMsg = document.createElement('div');
+            currentAiMsg.className = 'bg-indigo-50 p-2 rounded-lg max-w-[80%] self-start ai-msg';
+            chatMessages.appendChild(currentAiMsg);
+        }
+        
+        currentAiMsg.innerText += data.content;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    });
+
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const input = document.getElementById('chat-input');
+        const chatMessages = document.getElementById('chat-messages');
+        
+        // Add User Message
+        const userMsg = document.createElement('div');
+        userMsg.className = 'bg-gray-100 p-2 rounded-lg max-w-[80%] self-end ml-auto';
+        userMsg.innerText = input.value;
+        chatMessages.appendChild(userMsg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        
+        // Reset input
+        setTimeout(() => { input.value = ''; }, 10);
+    });
+</script>

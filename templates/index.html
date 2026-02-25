@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Main Form Section -->
+    <div class="lg:col-span-2 space-y-8">
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 class="text-xl font-semibold mb-6 border-b pb-2">Step 1: Brand Identity</h2>
+            <form hx-post="/evaluate/brand" hx-target="#brand-result" hx-indicator="#brand-spinner" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Legal Business Name</label>
+                        <input type="text" name="name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Tax ID / EIN</label>
+                        <input type="text" name="ein" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Physical Address</label>
+                    <input type="text" name="address" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Website URL (Privacy Policy Check)</label>
+                    <input type="url" name="website" required placeholder="https://yourbrand.com" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition flex items-center justify-center">
+                    Analyze Brand Compliance
+                    <img id="brand-spinner" class="htmx-indicator ml-2 h-5 w-5 animate-spin" src="https://www.svgrepo.com/show/448500/loading.svg">
+                </button>
+            </form>
+            <div id="brand-result" class="mt-4"></div>
+        </section>
+
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 class="text-xl font-semibold mb-6 border-b pb-2">Step 2: Campaign Details</h2>
+            <form hx-post="/evaluate/campaign" hx-target="#campaign-result" hx-indicator="#campaign-spinner" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Use Case Description</label>
+                    <textarea name="use_case" rows="3" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border" placeholder="Explain the purpose of your SMS campaign..."></textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Sample Messages (One per line)</label>
+                    <textarea name="sample_messages" rows="4" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border" placeholder="Hello! [Brand] here. Reply STOP to opt-out."></textarea>
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition flex items-center justify-center">
+                    Lint Campaign Content
+                    <img id="campaign-spinner" class="htmx-indicator ml-2 h-5 w-5 animate-spin" src="https://www.svgrepo.com/show/448500/loading.svg">
+                </button>
+            </form>
+            <div id="campaign-result" class="mt-4"></div>
+        </section>
+
+        <section class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <h2 class="text-xl font-semibold mb-6 border-b pb-2">Step 3: Opt-In Verification</h2>
+            <form hx-post="/evaluate/opt-in" hx-encoding="multipart/form-data" hx-target="#opt-in-result" hx-indicator="#opt-in-spinner" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700">Upload Consent Flow Screenshot</label>
+                    <p class="text-xs text-gray-500 mb-2">Show the form where users enter their phone number and see the SMS disclosures.</p>
+                    <input type="file" name="opt_in_file" required class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 border p-2">
+                </div>
+                <button type="submit" class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition flex items-center justify-center">
+                    Validate Opt-In Proof
+                    <img id="opt-in-spinner" class="htmx-indicator ml-2 h-5 w-5 animate-spin" src="https://www.svgrepo.com/show/448500/loading.svg">
+                </button>
+            </form>
+            <div id="opt-in-result" class="mt-4"></div>
+        </section>
+    </div>
+
+    <!-- Summary / Status Section -->
+    <div class="space-y-6">
+        <div class="bg-white p-6 rounded-xl shadow-md border border-gray-200 sticky top-8">
+            <h2 class="text-lg font-bold mb-4 text-gray-800">Compliance Scorecard</h2>
+            <div id="vetting-report" class="space-y-4">
+                <p class="text-sm text-gray-500 italic">Submit form sections to generate your evaluation report.</p>
+            </div>
+            <div class="mt-8 pt-4 border-t">
+                <button onclick="window.print()" class="w-full border border-gray-300 text-gray-700 py-2 rounded hover:bg-gray-50 transition">
+                    Download PDF Report
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

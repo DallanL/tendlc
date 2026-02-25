@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+jinja2
+python-multipart
+openai
+pydantic
+httpx
+beautifulsoup4
+python-dotenv

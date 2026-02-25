@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>10DLC Compliance Portal</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/sse.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .htmx-indicator {
+            display: none;
+        }
+        .htmx-request .htmx-indicator {
+            display: inline-block;
+        }
+        .htmx-request.htmx-indicator {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 font-sans min-h-screen">
+    <nav class="bg-indigo-700 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold tracking-tight">10DLC Pre-Vetter <span class="text-indigo-200 text-sm font-normal">v2026.1</span></h1>
+            <div class="space-x-4">
+                <a href="#" class="hover:text-indigo-200 transition">Dashboard</a>
+                <a href="#" class="hover:text-indigo-200 transition">Documentation</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto py-8 px-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Floating Chat Widget Container -->
+    <div id="chat-widget" class="fixed bottom-6 right-6 z-50">
+        {% include 'partials/chat_widget.html' %}
+    </div>
+
+    <footer class="mt-12 py-6 border-t border-gray-200 text-center text-gray-500 text-sm">
+        &copy; 2026 10DLC Compliance Engine. Strictly TCR/CTIA Compliant.
+    </footer>
+</body>
+</html>
