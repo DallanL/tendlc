@@ -7,3 +7,7 @@ pydantic
 httpx
 beautifulsoup4
 python-dotenv
+black
+ruff
+mypy
+markdown

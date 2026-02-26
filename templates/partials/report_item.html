@@ -5,5 +5,18 @@
             {{ status }}
         </span>
     </div>
-    <p class="text-sm">{{ feedback }}</p>
+    <p class="text-sm mb-3">{{ feedback }}</p>
+
+    {% if recommended_changes %}
+    <div class="mt-4 pt-3 border-t border-red-200">
+        <h4 class="text-xs font-bold uppercase tracking-wider text-red-600 mb-2">Recommended Policy Changes</h4>
+        <ul class="space-y-2">
+            {% for change in recommended_changes %}
+            <li class="text-xs font-mono bg-white bg-opacity-50 p-2 rounded border border-red-100">
+                {{ change }}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
 </div>
