@@ -436,15 +436,19 @@
             <div id="vetting-report" class="space-y-4">
                 <p class="text-sm text-gray-500 italic">Submit form sections to generate your evaluation report.</p>
             </div>
-            <div class="mt-8 pt-4 border-t">
-                <button onclick="window.print()" class="w-full border border-gray-300 text-gray-700 py-2 rounded hover:bg-gray-50 transition">
-                    Download PDF Report
+            <div class="mt-8 pt-4 border-t space-y-3">
+                <button onclick="downloadApplication()" class="w-full bg-indigo-600 text-white py-2 rounded hover:bg-indigo-700 transition flex items-center justify-center font-semibold shadow-sm">
+                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path></svg>
+                    Save Application (.txt)
+                </button>
+                <button onclick="clearSession()" class="w-full text-red-600 text-xs font-semibold py-2 hover:underline">
+                    Reset Form & Clear Session
                 </button>
             </div>
         </div>
 
         <!-- Compliance Templates Widget -->
-        <div class="bg-indigo-50 p-6 rounded-xl border border-indigo-100 sticky top-[30rem]">
+        <div class="bg-indigo-50 p-6 rounded-xl border border-indigo-100 sticky top-[35rem]">
             <h3 class="text-md font-bold mb-3 text-indigo-900 flex items-center">
                 <svg class="w-5 h-5 mr-2 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                 1-for-1 Compliant Templates
@@ -461,4 +465,147 @@
         </div>
     </div>
 </div>
+
+<script>
+    const STORAGE_KEY = 'tendlc_session_v1';
+
+    function saveFormData() {
+        const data = {};
+        const inputs = document.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => {
+            if (!input.name || input.type === 'file' || input.type === 'password') return;
+            
+            if (input.type === 'radio' || input.type === 'checkbox') {
+                if (input.checked) {
+                    data[input.name] = input.value;
+                }
+            } else {
+                data[input.name] = input.value;
+            }
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadFormData() {
+        const rawData = localStorage.getItem(STORAGE_KEY);
+        if (!rawData) return;
+        
+        try {
+            const data = JSON.parse(rawData);
+            Object.keys(data).forEach(name => {
+                const value = data[name];
+                const elements = document.getElementsByName(name);
+                
+                elements.forEach(el => {
+                    if (el.type === 'radio' || el.type === 'checkbox') {
+                        if (el.value === value) {
+                            el.checked = true;
+                            // Trigger dynamic visibility changes
+                            if (el.onchange) el.onchange();
+                        }
+                    } else {
+                        el.value = value;
+                    }
+                });
+            });
+            console.log('Session restored from local storage.');
+        } catch (e) {
+            console.error('Failed to restore session:', e);
+        }
+    }
+
+    function downloadApplication() {
+        const rawData = localStorage.getItem(STORAGE_KEY);
+        if (!rawData) {
+            alert('No data to save. Please fill out the form first.');
+            return;
+        }
+        
+        const data = JSON.parse(rawData);
+        let md = `# 10DLC Registration Application\n\n`;
+        md += `Generated on: ${new Date().toLocaleString()}\n\n`;
+        
+        md += `## Step 1: Brand Identity\n`;
+        md += `- Legal Name: ${data.legal_name || 'N/A'}\n`;
+        md += `- DBA/Brand Name: ${data.dba_name || 'N/A'}\n`;
+        md += `- Organization Type: ${data.legal_form || 'N/A'}\n`;
+        md += `- Country of Registration: ${data.country_of_registration || 'N/A'}\n`;
+        md += `- Tax ID Issuing Country: ${data.tax_id_issuing_country || 'N/A'}\n`;
+        md += `- EIN/Tax ID: ${data.ein || 'N/A'}\n`;
+        md += `- Alt ID Type: ${data.alt_business_id_type || 'N/A'}\n`;
+        md += `- Alt ID Value: ${data.alt_business_id || 'N/A'}\n`;
+        md += `- Physical Address: ${data.address || 'N/A'}\n`;
+        md += `- Website: ${data.website_url || 'N/A'}\n`;
+        md += `- Privacy Policy URL: ${data.privacy_policy_url || 'N/A'}\n`;
+        md += `- Terms & Conditions URL: ${data.terms_and_conditions_url || 'N/A'}\n`;
+        md += `- Stock Symbol: ${data.stock_symbol || 'N/A'} (${data.stock_exchange || 'N/A'})\n\n`;
+        
+        md += `### Contact Information\n`;
+        md += `- Name: ${data.contact_first_name || ''} ${data.contact_last_name || ''}\n`;
+        md += `- Email: ${data.contact_email || 'N/A'}\n`;
+        md += `- Phone: ${data.contact_phone || 'N/A'}\n\n`;
+        
+        md += `## Step 2: Campaign Details\n`;
+        md += `- Display Name: ${data.display_name || 'N/A'}\n`;
+        md += `- Vertical: ${data.vertical || 'N/A'}\n\n`;
+        
+        md += `### Description\n${data.description || 'N/A'}\n\n`;
+        md += `### Call-to-Action / Message Flow\n${data.cta_flow || 'N/A'}\n\n`;
+        
+        md += `### Sample Messages\n`;
+        for(let i=1; i<=5; i++) {
+            const msg = data['sample_message_'+i];
+            if (msg) md += `${i}. ${msg}\n`;
+        }
+        md += `\n- Embedded Link Sample: ${data.embedded_link_sample || 'N/A'}\n\n`;
+        
+        md += `### Attributes & Keywords\n`;
+        const attrs = ['subscriber_opt_in', 'subscriber_opt_out', 'subscriber_help', 'number_pooling', 'direct_lending', 'embedded_link', 'embedded_phone', 'affiliate_marketing', 'age_gated'];
+        attrs.forEach(attr => {
+            const val = data[attr] || 'no';
+            md += `- ${attr.replace(/_/g, ' ').toUpperCase()}: ${val.toUpperCase()}\n`;
+            if (val === 'yes' && data[attr + '_keyword']) {
+                md += `  - Keyword: ${data[attr + '_keyword']}\n`;
+                md += `  - Message: ${data[attr + '_message']}\n`;
+            }
+        });
+
+        const blob = new Blob([md], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const brand = (data.legal_name || '10DLC_Application').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+        a.download = `${brand}_registration.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function clearSession() {
+        if (confirm('Are you sure you want to clear all form data? This cannot be undone.')) {
+            localStorage.removeItem(STORAGE_KEY);
+            window.location.reload();
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+        loadFormData();
+        
+        // Auto-save on any input
+        document.addEventListener('input', (e) => {
+            if (e.target.closest('form')) {
+                saveFormData();
+            }
+        });
+
+        // Ensure AI Assist programmatic changes are also saved
+        document.body.addEventListener('htmx:afterRequest', (e) => {
+            if (e.detail.pathInfo && e.detail.pathInfo.requestPath.includes('/assist/')) {
+                saveFormData();
+            }
+        });
+    });
+</script>
 {% endblock %}

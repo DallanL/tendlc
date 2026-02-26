@@ -19,11 +19,9 @@ VISION_MODEL = os.getenv("VISION_MODEL", "llava")
 client = AsyncOpenAI(base_url=AI_BASE_URL, api_key=AI_API_KEY)
 
 
-def _get_guidelines(filename: str):
+def _get_guidelines(filename: str) -> str:
     try:
         path = os.path.join("docs", filename)
-        if not os.path.exists(path):
-            pass
         with open(path, "r") as f:
             return f.read()
     except Exception as e:
@@ -31,7 +29,7 @@ def _get_guidelines(filename: str):
         return "Guidelines not found."
 
 
-async def scrape_privacy_policy(url: str):
+async def scrape_privacy_policy(url: str) -> str:
     print(f"DEBUG: Attempting to scrape URL: {url}")
     try:
         async with httpx.AsyncClient(
@@ -48,31 +46,46 @@ async def scrape_privacy_policy(url: str):
                 )
                 return initial_text[:100000]
 
-            privacy_link = soup.find("a", string=lambda t: t and "privacy" in t.lower())
+            privacy_link = soup.find("a", string=lambda t: t and "privacy" in t.lower())  # type: ignore
+            if (
+                privacy_link
+                and isinstance(privacy_link, dict)
+                and "href" in privacy_link
+            ):
+                # Type safe access
+                pass
+
+            # Simple fallback for search
+            privacy_link = None
+            for a in soup.find_all("a"):
+                if a.string and "privacy" in a.string.lower():
+                    privacy_link = a
+                    break
+
             if privacy_link:
                 policy_url = privacy_link.get("href")
-
-                if (
-                    policy_url.startswith("http")
-                    and url.split("/")[2] not in policy_url
-                ):
-                    print(
-                        f"DEBUG: Privacy link points to external domain ({policy_url}). Skipping."
-                    )
-                else:
-                    print(f"DEBUG: Found likely privacy link: {policy_url}")
-                    if not policy_url.startswith("http"):
-                        base_url = "/".join(url.split("/")[:3])
-                        policy_url = base_url + (
-                            policy_url
-                            if policy_url.startswith("/")
-                            else "/" + policy_url
+                if isinstance(policy_url, str):
+                    if (
+                        policy_url.startswith("http")
+                        and url.split("/")[2] not in policy_url
+                    ):
+                        print(
+                            f"DEBUG: Privacy link points to external domain ({policy_url}). Skipping."
                         )
+                    else:
+                        print(f"DEBUG: Found likely privacy link: {policy_url}")
+                        if not policy_url.startswith("http"):
+                            base_url = "/".join(url.split("/")[:3])
+                            policy_url = base_url + (
+                                policy_url
+                                if policy_url.startswith("/")
+                                else "/" + policy_url
+                            )
 
-                    print(f"DEBUG: Scraping policy URL: {policy_url}")
-                    policy_response = await httpx_client.get(policy_url)
-                    policy_soup = BeautifulSoup(policy_response.text, "html.parser")
-                    return policy_soup.get_text()[:100000]
+                        print(f"DEBUG: Scraping policy URL: {policy_url}")
+                        policy_response = await httpx_client.get(policy_url)
+                        policy_soup = BeautifulSoup(policy_response.text, "html.parser")
+                        return policy_soup.get_text()[:100000]
 
             print(
                 f"DEBUG: No privacy link found or link was invalid. Returning initial text (length: {len(initial_text)})"
@@ -83,7 +96,7 @@ async def scrape_privacy_policy(url: str):
         return f"Error scraping: {str(e)}"
 
 
-async def _extract_json(text: str):
+async def _extract_json(text: str) -> str:
     try:
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match:
@@ -93,15 +106,15 @@ async def _extract_json(text: str):
         return text
 
 
-async def analyze_brand_compliance(website_text: str, on_progress=None):
+async def analyze_brand_compliance(website_text: str, on_progress=None) -> str:
     return await _analyze_document(website_text, "Privacy Policy", on_progress)
 
 
-async def analyze_tos_compliance(website_text: str, on_progress=None):
+async def analyze_tos_compliance(website_text: str, on_progress=None) -> str:
     return await _analyze_document(website_text, "Terms of Service", on_progress)
 
 
-async def _analyze_document(website_text: str, doc_type: str, on_progress=None):
+async def _analyze_document(website_text: str, doc_type: str, on_progress=None) -> str:
     chunk_size = 10000
     chunks = [
         website_text[i : i + chunk_size]
@@ -114,7 +127,6 @@ async def _analyze_document(website_text: str, doc_type: str, on_progress=None):
 
     for i, chunk in enumerate(chunks):
         if on_progress:
-            # We save the last 10% for synthesis
             percent = int((i / (total_chunks + 1)) * 100)
             await on_progress(
                 f"Analyzing {doc_type} section {i+1} of {total_chunks}...", percent
@@ -126,8 +138,9 @@ async def _analyze_document(website_text: str, doc_type: str, on_progress=None):
             response = await client.chat.completions.create(
                 model=AI_MODEL, messages=[{"role": "user", "content": prompt}]
             )
+            content = response.choices[0].message.content or "No findings."
             partial_findings.append(
-                f"--- {doc_type} Section {i+1} Finding ---\n{response.choices[0].message.content}"
+                f"--- {doc_type} Section {i+1} Finding ---\n{content}"
             )
         except Exception as e:
             print(f"DEBUG: Error analyzing {doc_type} chunk {i+1}: {e}")
@@ -153,7 +166,8 @@ async def _analyze_document(website_text: str, doc_type: str, on_progress=None):
         if on_progress:
             await on_progress(f"{doc_type} vetting complete", 100)
 
-        content = await _extract_json(response.choices[0].message.content)
+        raw_content = response.choices[0].message.content or "{}"
+        content = await _extract_json(raw_content)
         return content
     except Exception as e:
         return json.dumps(
@@ -168,7 +182,7 @@ async def lint_campaign_messages(
     cta_flow: str,
     messages: str,
     attributes: dict,
-):
+) -> str:
     guidelines = _get_guidelines("campaign_content_guidelines.md")
     prompt = prompts.CAMPAIGN_LINTER_PROMPT.format(
         guidelines=guidelines,
@@ -183,7 +197,8 @@ async def lint_campaign_messages(
         response = await client.chat.completions.create(
             model=AI_MODEL, messages=[{"role": "user", "content": prompt}]
         )
-        content = await _extract_json(response.choices[0].message.content)
+        raw_content = response.choices[0].message.content or "{}"
+        content = await _extract_json(raw_content)
         return content
     except Exception as e:
         return json.dumps(
@@ -191,7 +206,7 @@ async def lint_campaign_messages(
         )
 
 
-async def analyze_opt_in_image(image_bytes: bytes, cta_flow: str):
+async def analyze_opt_in_image(image_bytes: bytes, cta_flow: str) -> str:
     guidelines = _get_guidelines("opt_in_consent_guidelines.md")
     base64_image = base64.b64encode(image_bytes).decode("utf-8")
 
@@ -217,11 +232,11 @@ async def analyze_opt_in_image(image_bytes: bytes, cta_flow: str):
                 }
             ],
         )
-        content = await _extract_json(response.choices[0].message.content)
+        raw_content = response.choices[0].message.content or "{}"
+        content = await _extract_json(raw_content)
         return content
     except Exception as e:
         print(f"DEBUG: Vision error: {e}")
-        # Fallback if vision model fails or is not available
         return json.dumps(
             {
                 "status": "Approved",
@@ -230,9 +245,9 @@ async def analyze_opt_in_image(image_bytes: bytes, cta_flow: str):
         )
 
 
-async def analyze_opt_in_web_form(url: str, cta_flow: str):
+async def analyze_opt_in_web_form(url: str, cta_flow: str) -> str:
     print(f"DEBUG: Analyzing opt-in web form at: {url}")
-    scraped_text = await scrape_privacy_policy(url)  # Reuse scraper
+    scraped_text = await scrape_privacy_policy(url)
     guidelines = _get_guidelines("opt_in_consent_guidelines.md")
 
     prompt = prompts.WEB_FORM_OPT_IN_PROMPT.format(
@@ -243,7 +258,8 @@ async def analyze_opt_in_web_form(url: str, cta_flow: str):
         response = await client.chat.completions.create(
             model=AI_MODEL, messages=[{"role": "user", "content": prompt}]
         )
-        content = await _extract_json(response.choices[0].message.content)
+        raw_content = response.choices[0].message.content or "{}"
+        content = await _extract_json(raw_content)
         return content
     except Exception as e:
         return json.dumps(
@@ -251,7 +267,7 @@ async def analyze_opt_in_web_form(url: str, cta_flow: str):
         )
 
 
-async def assist_use_case(current_text: str):
+async def assist_use_case(current_text: str) -> str:
     guidelines = _get_guidelines("campaign_content_guidelines.md")
     prompt = prompts.USE_CASE_ASSIST_PROMPT.format(
         guidelines=guidelines, current_text=current_text
@@ -259,10 +275,10 @@ async def assist_use_case(current_text: str):
     response = await client.chat.completions.create(
         model=AI_MODEL, messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
 
 
-async def assist_messages(current_text: str):
+async def assist_messages(current_text: str) -> str:
     guidelines = _get_guidelines("campaign_content_guidelines.md")
     prompt = prompts.MESSAGES_ASSIST_PROMPT.format(
         guidelines=guidelines, current_text=current_text
@@ -270,20 +286,20 @@ async def assist_messages(current_text: str):
     response = await client.chat.completions.create(
         model=AI_MODEL, messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
 
 
-async def assist_cta(current_text: str, display_name: str, website: str):
+async def assist_cta(current_text: str, display_name: str, website: str) -> str:
     prompt = prompts.CTA_ASSIST_PROMPT.format(
         display_name=display_name, website=website, current_text=current_text
     )
     response = await client.chat.completions.create(
         model=AI_MODEL, messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
 
 
-async def assist_keyword_message(type: str, display_name: str, keyword: str):
+async def assist_keyword_message(type: str, display_name: str, keyword: str) -> str:
     if type == "opt_in":
         prompt_tmpl = prompts.OPT_IN_ASSIST_PROMPT
     elif type == "opt_out":
@@ -295,4 +311,4 @@ async def assist_keyword_message(type: str, display_name: str, keyword: str):
     response = await client.chat.completions.create(
         model=AI_MODEL, messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].message.content
+    return response.choices[0].message.content or ""
