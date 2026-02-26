@@ -15,18 +15,15 @@ from schemas import CampaignDetails, CampaignAttributes
 
 load_dotenv()
 
-# Configuration for local AI
 AI_BASE_URL = os.getenv("AI_BASE_URL", "http://localhost:11434/v1")
 AI_API_KEY = os.getenv("AI_API_KEY", "ollama")
 AI_MODEL = os.getenv("AI_MODEL", "llama3")
 
 app = FastAPI()
-
 client = AsyncOpenAI(base_url=AI_BASE_URL, api_key=AI_API_KEY)
-
 templates = Jinja2Templates(directory="templates")
 
-# Task storage for progress tracking
+# Background task state
 brand_tasks: Dict[str, Any] = {}
 
 
@@ -43,22 +40,17 @@ async def serve_doc(request: Request, doc_name: str):
             safe_name += ".md"
 
         file_path = os.path.join("docs", safe_name)
-
         with open(file_path, "r", encoding="utf-8") as f:
             text = f.read()
 
         html_content = markdown.markdown(text)
-
+        title = safe_name.replace("_", " ").replace(".md", "").title()
         return templates.TemplateResponse(
             "doc_view.html",
-            {
-                "request": request,
-                "content": html_content,
-                "title": safe_name.replace("_", " ").replace(".md", "").title(),
-            },
+            {"request": request, "content": html_content, "title": title},
         )
     except Exception:
-        return HTMLResponse("Document not found.", status_code=404)
+        return HTMLResponse("Not found.", status_code=404)
 
 
 @app.post("/evaluate/brand", response_class=HTMLResponse)
@@ -95,20 +87,19 @@ async def evaluate_brand(
         for i, url in enumerate(urls):
             doc_type = "Privacy Policy" if i == 0 else "Terms & Conditions"
             brand_tasks[task_id]["status"] = f"Scraping {doc_type}..."
-
             website_text = await ai_utils.scrape_privacy_policy(url)
 
             async def on_progress(status, progress):
-                # Adjust progress to account for multiple URLs
                 total_progress = (i * 100 + progress) // len(urls)
                 brand_tasks[task_id]["status"] = f"[{doc_type}] {status}"
                 brand_tasks[task_id]["progress"] = total_progress
 
-            result_raw = await (
-                ai_utils.analyze_brand_compliance(website_text, on_progress)
+            func = (
+                ai_utils.analyze_brand_compliance
                 if i == 0
-                else ai_utils.analyze_tos_compliance(website_text, on_progress)
+                else ai_utils.analyze_tos_compliance
             )
+            result_raw = await func(website_text, on_progress)
 
             try:
                 result = json.loads(result_raw)
@@ -119,14 +110,13 @@ async def evaluate_brand(
                     {
                         "doc_type": doc_type,
                         "status": "Rejected",
-                        "feedback": f"AI failed to produce valid JSON: {str(e)}",
+                        "feedback": f"Error: {e}",
                     }
                 )
 
         brand_tasks[task_id]["progress"] = 100
 
     background_tasks.add_task(run_analysis)
-
     return templates.TemplateResponse(
         "partials/brand_polling.html", {"request": request, "task_id": task_id}
     )
@@ -136,15 +126,12 @@ async def evaluate_brand(
 async def evaluate_brand_status(request: Request, task_id: str):
     task = brand_tasks.get(task_id)
     if not task:
-        return HTMLResponse("Task not found", status_code=404)
+        return HTMLResponse("Not found", status_code=404)
 
     if task["progress"] == 100 and task["results"]:
         return templates.TemplateResponse(
             "partials/brand_report_multi.html",
-            {
-                "request": request,
-                "results": task["results"],
-            },
+            {"request": request, "results": task["results"]},
         )
 
     return templates.TemplateResponse(
@@ -162,7 +149,6 @@ async def evaluate_brand_status(request: Request, task_id: str):
 async def assist_attribute_message(
     attr_type: str, display_name: str = Form(...), keyword: str = Form(...)
 ):
-    print(f"DEBUG: AI Assist requested for {attr_type}. Keyword: {keyword}")
     message = await ai_utils.assist_keyword_message(attr_type, display_name, keyword)
     return PlainTextResponse(message)
 
@@ -196,16 +182,19 @@ async def evaluate_campaign(
     affiliate_marketing: str = Form(...),
     age_gated: str = Form(...),
 ):
-    # Map messages
-    messages = [sample_message_1, sample_message_2]
-    if sample_message_3:
-        messages.append(sample_message_3)
-    if sample_message_4:
-        messages.append(sample_message_4)
-    if sample_message_5:
-        messages.append(sample_message_5)
+    # Consolidate samples
+    messages = [
+        m
+        for m in [
+            sample_message_1,
+            sample_message_2,
+            sample_message_3,
+            sample_message_4,
+            sample_message_5,
+        ]
+        if m
+    ]
 
-    # Map attributes
     attrs = CampaignAttributes(
         subscriber_opt_in=subscriber_opt_in.lower() == "yes",
         opt_in_keyword=opt_in_keyword,
@@ -234,32 +223,27 @@ async def evaluate_campaign(
         attributes=attrs,
     )
 
-    # Include special messages in the analysis context
-    all_context_messages = list(details.sample_messages)
+    all_msgs = list(details.sample_messages)
     if details.attributes.opt_in_message:
-        all_context_messages.append(f"OPT-IN: {details.attributes.opt_in_message}")
+        all_msgs.append(f"OPT-IN: {details.attributes.opt_in_message}")
     if details.attributes.opt_out_message:
-        all_context_messages.append(f"OPT-OUT: {details.attributes.opt_out_message}")
+        all_msgs.append(f"OPT-OUT: {details.attributes.opt_out_message}")
     if details.attributes.help_message:
-        all_context_messages.append(f"HELP: {details.attributes.help_message}")
+        all_msgs.append(f"HELP: {details.attributes.help_message}")
 
     result_raw = await ai_utils.lint_campaign_messages(
         details.display_name,
         details.vertical,
         details.description,
         details.cta_flow,
-        "\n---\n".join(all_context_messages),
+        "\n---\n".join(all_msgs),
         details.attributes.dict(),
     )
 
     try:
         result = json.loads(result_raw)
     except Exception:
-        result = {
-            "status": "Rejected",
-            "feedback": "AI failed to produce valid JSON. Raw output: "
-            + str(result_raw),
-        }
+        result = {"status": "Rejected", "feedback": f"AI Error: {result_raw}"}
 
     return templates.TemplateResponse(
         "partials/report_item.html",
@@ -267,9 +251,7 @@ async def evaluate_campaign(
             "request": request,
             "title": "Campaign Compliance Vetting",
             "status": result.get("status", "Rejected"),
-            "feedback": result.get(
-                "feedback", "Review sample messages for Brand ID and STOP keyword."
-            ),
+            "feedback": result.get("feedback", "Review required."),
         },
     )
 
@@ -293,18 +275,14 @@ async def evaluate_opt_in(
                 "request": request,
                 "title": "Opt-In Proof Vetting",
                 "status": "Rejected",
-                "feedback": "Please provide either a screenshot upload or a web form URL.",
+                "feedback": "Provide upload or URL.",
             },
         )
 
     try:
         result = json.loads(result_raw)
     except Exception:
-        result = {
-            "status": "Rejected",
-            "feedback": "AI failed to produce valid JSON. Raw output: "
-            + str(result_raw),
-        }
+        result = {"status": "Rejected", "feedback": f"AI Error: {result_raw}"}
 
     return templates.TemplateResponse(
         "partials/report_item.html",
@@ -312,7 +290,7 @@ async def evaluate_opt_in(
             "request": request,
             "title": "Opt-In Proof Vetting",
             "status": result.get("status", "Rejected"),
-            "feedback": result.get("feedback", "Check opt-in proof manually."),
+            "feedback": result.get("feedback", "Manual review recommended."),
         },
     )
 
@@ -334,42 +312,29 @@ async def chat_stream(request: Request, message: Optional[str] = None):
             )
             async for chunk in response:
                 if chunk.choices[0].delta.content:
-                    data = json.dumps({"content": chunk.choices[0].delta.content})
-                    yield f"event: message\ndata: {data}\n\n"
-
+                    yield f"event: message\ndata: {json.dumps({'content': chunk.choices[0].delta.content})}\n\n"
             yield f"event: message\ndata: {json.dumps({'content': '[DONE]'})}\n\n"
         except Exception as e:
-            yield f"event: message\ndata: {json.dumps({'content': f'Error: {str(e)}'})}\n\n"
+            yield f"event: message\ndata: {json.dumps({'content': f'Error: {e}'})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.post("/assist/use-case")
 async def assist_use_case_endpoint(use_case: str = Form("")):
-    improved_text = await ai_utils.assist_use_case(use_case)
-    return PlainTextResponse(improved_text)
+    return PlainTextResponse(await ai_utils.assist_use_case(use_case))
 
 
 @app.post("/assist/cta")
 async def assist_cta_endpoint(
     cta_flow: str = Form(""), display_name: str = Form(""), website: str = Form("")
 ):
-    print(f"DEBUG: AI Assist requested for CTA. Input length: {len(cta_flow)}")
-    improved_cta = await ai_utils.assist_cta(cta_flow, display_name, website)
-    print(f"DEBUG: AI Assist returned improved CTA (length: {len(improved_cta)})")
-    return PlainTextResponse(improved_cta)
+    return PlainTextResponse(await ai_utils.assist_cta(cta_flow, display_name, website))
 
 
 @app.post("/assist/messages")
 async def assist_messages_endpoint(sample_messages: str = Form("")):
-    print(
-        f"DEBUG: AI Assist requested for Messages. Input length: {len(sample_messages)}"
-    )
-    improved_messages = await ai_utils.assist_messages(sample_messages)
-    print(
-        f"DEBUG: AI Assist returned improved Messages (length: {len(improved_messages)})"
-    )
-    return PlainTextResponse(improved_messages)
+    return PlainTextResponse(await ai_utils.assist_messages(sample_messages))
 
 
 if __name__ == "__main__":
