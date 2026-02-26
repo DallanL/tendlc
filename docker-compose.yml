@@ -1,0 +1,30 @@
+services:
+  tendlc:
+    build: .
+    container_name: tendlc
+    restart: unless-stopped
+    expose:
+      - "8000"
+    
+    environment:
+      - AI_BASE_URL=${AI_BASE_URL}
+      - AI_API_KEY=${AI_API_KEY}
+      - AI_MODEL=${AI_MODEL}
+      - VISION_MODEL=${VISION_MODEL}
+      - DOCKER_NETWORK=${DOCKER_NETWORK}
+      - SERVICE_DOMAIN=${SERVICE_DOMAIN}
+
+    networks:
+      - app_network
+
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.tendlc.rule=Host(`${SERVICE_DOMAIN}`)"
+      - "traefik.http.routers.tendlc.entrypoints=websecure"
+      - "traefik.http.routers.tendlc.tls.certresolver=letsencrypt"
+      - "traefik.http.services.tendlc.loadbalancer.server.port=8000"
+
+networks:
+  app_network:
+    external: true
+    name: ${DOCKER_NETWORK}
