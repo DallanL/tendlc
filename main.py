@@ -181,8 +181,8 @@ async def evaluate_campaign(
     request: Request,
     display_name: str = Form(...),
     vertical: str = Form(...),
-    primary_use_case: str = Form(...),
-    sub_use_cases: List[str] = Form([]),
+    selected_use_cases: List[str] = Form([]),
+    is_high_volume: str = Form("no"),
     description: str = Form(...),
     cta_flow: str = Form(...),
     sample_message_1: str = Form(...),
@@ -241,8 +241,8 @@ async def evaluate_campaign(
     details = CampaignDetails(
         display_name=display_name,
         vertical=vertical,
-        primary_use_case=primary_use_case,
-        sub_use_cases=sub_use_cases,
+        selected_use_cases=selected_use_cases,
+        is_high_volume=is_high_volume.lower() == "yes",
         description=description,
         cta_flow=cta_flow,
         sample_messages=messages,
@@ -258,10 +258,14 @@ async def evaluate_campaign(
     if details.attributes.help_message:
         all_msgs.append(f"HELP: {details.attributes.help_message}")
 
-    # Enhanced context for AI analysis
-    use_case_str = details.primary_use_case
-    if details.sub_use_cases:
-        use_case_str += f" (Mixed: {', '.join(details.sub_use_cases)})"
+    # Determine effective use case for AI context
+    if not details.selected_use_cases:
+        use_case_str = "None selected"
+    elif len(details.selected_use_cases) == 1:
+        use_case_str = details.selected_use_cases[0]
+    else:
+        type_prefix = "Mixed" if details.is_high_volume else "Low Volume Mixed"
+        use_case_str = f"{type_prefix} ({', '.join(details.selected_use_cases)})"
 
     result_raw = await ai_utils.lint_campaign_messages(
         details.display_name,
