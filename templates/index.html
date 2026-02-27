@@ -173,6 +173,52 @@
                     </div>
                 </div>
 
+                <!-- Use Case Selection -->
+                <div class="space-y-4 border-t pt-4">
+                    <h3 class="text-sm font-bold text-gray-800">Primary Campaign Use Case</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {% set use_cases = [
+                            ('2FA', '2FA', '$12.00', false),
+                            ('ACCOUNT_NOTIFICATION', 'Account Notification', '$12.00', false),
+                            ('CUSTOMER_CARE', 'Customer Care', '$12.00', false),
+                            ('DELIVERY_NOTIFICATION', 'Delivery Notification', '$12.00', false),
+                            ('FRAUD_ALERT', 'Fraud Alert Messaging', '$12.00', false),
+                            ('HIGHER_EDUCATION', 'Higher Education', '$12.00', false),
+                            ('LOW_VOLUME_MIXED', 'Low Volume Mixed', '$4.00', true),
+                            ('MARKETING', 'Marketing', '$12.00', false),
+                            ('MIXED', 'Mixed', '$12.00', true),
+                            ('POLLING_VOTING', 'Polling and voting', '$12.00', false),
+                            ('PSA', 'Public Service Announcement', '$12.00', false),
+                            ('SECURITY_ALERT', 'Security Alert', '$12.00', false)
+                        ] %}
+                        {% for id, name, fee, is_mixed in use_cases %}
+                        <label class="relative flex flex-col p-3 cursor-pointer rounded-lg border border-gray-200 hover:border-indigo-300 transition focus-within:ring-2 focus-within:ring-indigo-500 bg-white shadow-sm">
+                            <div class="flex justify-between items-start">
+                                <span class="text-xs font-bold text-gray-900 leading-tight pr-2">{{ name }}</span>
+                                <input type="radio" name="primary_use_case" value="{{ id }}" required class="text-indigo-600 h-4 w-4"
+                                       onchange="toggleMixedSection('{{ id }}', {{ 'true' if is_mixed else 'false' }})">
+                            </div>
+                            <span class="mt-2 text-[10px] text-gray-500">{{ fee }} /mo</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Sub-Use Cases (Conditional) -->
+                    <div id="mixed-use-cases" class="hidden pl-4 border-l-2 border-indigo-200 space-y-3 mt-4 bg-indigo-50 p-4 rounded-r-lg">
+                        <h4 class="text-xs font-bold text-indigo-900 uppercase tracking-wider">Select Sub-Use Cases (Required for Mixed)</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                            {% for id, name, fee, is_mixed in use_cases %}
+                                {% if not is_mixed %}
+                                <label class="flex items-center space-x-2 text-xs text-gray-700 cursor-pointer hover:text-indigo-600">
+                                    <input type="checkbox" name="sub_use_cases" value="{{ id }}" class="rounded text-indigo-600 h-3 w-3">
+                                    <span>{{ name }}</span>
+                                </label>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Description -->
                 <div class="relative">
                     <div class="flex justify-between items-center mb-1">
@@ -554,7 +600,17 @@
         
         md += `## Step 2: Campaign Details\n`;
         md += `- Display Name: ${data.display_name || 'N/A'}\n`;
-        md += `- Vertical: ${data.vertical || 'N/A'}\n\n`;
+        md += `- Vertical: ${data.vertical || 'N/A'}\n`;
+        md += `- Primary Use Case: ${data.primary_use_case || 'N/A'}\n`;
+        
+        // Handle multi-select checkboxes for sub-use cases
+        const subUseCases = [];
+        const checkboxes = document.querySelectorAll('input[name="sub_use_cases"]:checked');
+        checkboxes.forEach(cb => subUseCases.push(cb.value));
+        if (subUseCases.length > 0) {
+            md += `- Sub-Use Cases: ${subUseCases.join(', ')}\n`;
+        }
+        md += `\n`;
         
         md += `### Description\n${data.description || 'N/A'}\n\n`;
         md += `### Call-to-Action / Message Flow\n${data.cta_flow || 'N/A'}\n\n`;
@@ -594,6 +650,18 @@
             localStorage.removeItem(STORAGE_KEY);
             window.location.reload();
         }
+    }
+
+    function toggleMixedSection(useCaseId, isMixed) {
+        const mixedDiv = document.getElementById('mixed-use-cases');
+        if (isMixed) {
+            mixedDiv.classList.remove('hidden');
+        } else {
+            mixedDiv.classList.add('hidden');
+            // Uncheck all sub-use-cases if not mixed
+            mixedDiv.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+        }
+        saveFormData();
     }
 
     // Initialize

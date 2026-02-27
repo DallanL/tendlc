@@ -150,6 +150,7 @@ async def _analyze_document(website_text: str, doc_type: str, on_progress=None) 
 async def lint_campaign_messages(
     display_name: str,
     vertical: str,
+    use_case: str,
     description: str,
     cta_flow: str,
     messages: str,
@@ -160,6 +161,7 @@ async def lint_campaign_messages(
         guidelines=guidelines,
         display_name=display_name,
         vertical=vertical,
+        use_case=use_case,
         description=description,
         cta_flow=cta_flow,
         messages=messages,

@@ -49,6 +49,7 @@ Analyze this SMS campaign for 2026 CTIA and TCR rules based on these guidelines:
 CAMPAIGN DATA:
 - Display Name: {display_name}
 - Vertical: {vertical}
+- Use Case: {use_case}
 - Description: {description}
 - CTA / Message Flow: {cta_flow}
 - Sample Messages: {messages}

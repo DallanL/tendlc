@@ -23,6 +23,8 @@ class CampaignAttributes(BaseModel):
 class CampaignDetails(BaseModel):
     display_name: str
     vertical: str
+    primary_use_case: str
+    sub_use_cases: List[str] = []
     description: str = Field(..., min_length=40, max_length=4000)
     cta_flow: str = Field(..., min_length=40, max_length=4000)
     sample_messages: List[str]
