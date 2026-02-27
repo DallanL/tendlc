@@ -163,19 +163,30 @@ OUTPUT INSTRUCTIONS:
 """
 
 MESSAGES_ASSIST_PROMPT = """
-Act as a 10DLC Compliance Expert. Improve the following Sample SMS Messages.
+Act as a 10DLC Compliance Expert. Generate exactly 5 distinct sample SMS messages.
+
+BRAND NAME: {display_name}
+OPT-IN KEYWORD: {opt_in_keyword}
+OPT-OUT KEYWORD: {opt_out_keyword}
+HELP KEYWORD: {help_keyword}
+EMBEDDED LINK ALLOWED: {embedded_link}
+EMBEDDED PHONE ALLOWED: {embedded_phone}
 
 GUIDELINES:
 {guidelines}
 
-CURRENT MESSAGES:
-{current_text}
+STRICT MESSAGE FORMAT:
+"{{Brand Name}}: {{generated message}}. Reply {{Help Keyword}} for assistance or to opt-out of further messages reply {{Stop Keyword}}."
+
+CONDITIONAL RULES:
+1. If EMBEDDED LINK ALLOWED is YES, you MAY include a branded URL in the message. If NO, do NOT include any URLs.
+2. If EMBEDDED PHONE ALLOWED is YES, you MAY include a contact phone number. If NO, do NOT include any phone numbers.
+3. Ensure every message starts with the Brand Name and ends with the mandatory help/stop disclosure exactly as formatted above.
 
 OUTPUT INSTRUCTIONS:
-- Generate exactly 5 distinct sample messages.
-- Ensure each message has Brand ID and mention of how to get HELP and how to Opt-out (STOP).
+- Generate exactly 5 distinct messages.
 - RETURN ONLY a JSON array of 5 strings.
-  Example: ["Message 1 content", "Message 2 content", "Message 3 content", "Message 4 content", "Message 5 content"]
+  Example: ["Brand: Msg 1. Reply HELP for help or STOP to stop.", ...]
 """
 
 OPT_IN_ASSIST_PROMPT = """

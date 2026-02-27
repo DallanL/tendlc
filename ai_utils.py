@@ -240,10 +240,23 @@ async def assist_use_case(current_text: str) -> str:
     return response.choices[0].message.content or ""
 
 
-async def assist_messages(current_text: str) -> str:
+async def assist_messages(
+    display_name: str,
+    opt_in: str,
+    opt_out: str,
+    help_kw: str,
+    embedded_link: str,
+    embedded_phone: str,
+) -> str:
     guidelines = _get_guidelines("campaign_content_guidelines.md")
     prompt = prompts.MESSAGES_ASSIST_PROMPT.format(
-        guidelines=guidelines, current_text=current_text
+        guidelines=guidelines,
+        display_name=display_name,
+        opt_in_keyword=opt_in,
+        opt_out_keyword=opt_out,
+        help_keyword=help_kw,
+        embedded_link=embedded_link,
+        embedded_phone=embedded_phone,
     )
     response = await client.chat.completions.create(
         model=AI_MODEL, messages=[{"role": "user", "content": prompt}]

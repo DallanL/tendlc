@@ -350,8 +350,18 @@ async def assist_cta_endpoint(
 
 
 @app.post("/assist/messages")
-async def assist_messages_endpoint(sample_messages: str = Form("")):
-    raw_json = await ai_utils.assist_messages(sample_messages)
+async def assist_messages_endpoint(request: Request):
+    form_data = await request.form()
+    display_name = str(form_data.get("display_name") or "Brand")
+    opt_in = str(form_data.get("subscriber_opt_in_keyword") or "START")
+    opt_out = str(form_data.get("subscriber_opt_out_keyword") or "STOP")
+    help_kw = str(form_data.get("subscriber_help_keyword") or "HELP")
+    embedded_link = str(form_data.get("embedded_link") or "no").upper()
+    embedded_phone = str(form_data.get("embedded_phone") or "no").upper()
+
+    raw_json = await ai_utils.assist_messages(
+        display_name, opt_in, opt_out, help_kw, embedded_link, embedded_phone
+    )
     try:
         msgs = json.loads(raw_json)
         return JSONResponse(content=msgs)
