@@ -149,16 +149,20 @@ async def evaluate_brand_status(request: Request, task_id: str):
 
 
 @app.post("/assist/attribute-message/{attr_type}")
-async def assist_attribute_message(
-    request: Request, attr_type: str, display_name: str = Form(...)
-):
+async def assist_attribute_message(request: Request, attr_type: str):
     form_data = await request.form()
+    display_name = str(form_data.get("display_name", ""))
+
+    # Extract keyword from any field ending in _keyword
     keyword = ""
     for key, value in form_data.items():
         if key.endswith("_keyword") and isinstance(value, str):
             keyword = value
             break
 
+    print(
+        f"DEBUG: AI Assist requested for {attr_type}. Keyword: {keyword}, Brand: {display_name}"
+    )
     message = await ai_utils.assist_keyword_message(attr_type, display_name, keyword)
     return PlainTextResponse(message)
 
