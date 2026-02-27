@@ -55,7 +55,13 @@ async def serve_doc(request: Request, doc_name: str):
         title = safe_name.replace("_", " ").replace(".md", "").title()
         return templates.TemplateResponse(
             "doc_view.html",
-            {"request": request, "content": html_content, "title": title},
+            {
+                "request": request,
+                "content": html_content,
+                "title": title,
+                "raw_text": text,
+                "filename": safe_name.replace(".md", ""),
+            },
         )
     except Exception:
         return HTMLResponse("Not found.", status_code=404)
