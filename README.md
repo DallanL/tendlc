@@ -49,14 +49,14 @@ To keep your data private and avoid API costs, use local inference servers:
 
 - **Ollama**:
   - `AI_BASE_URL=http://localhost:11434/v1`
-  - **Text Model**: `qwen2.5:8b` or `qwen2.5:14b` (Highly recommended for strict instruction following).
+  - **Text Model**: `qwen3:8b` or `qwen3:14b` (Highly recommended for strict instruction following).
   - **Vision Model**: `llama3.2-vision:11b` (Required for screenshot verification).
 - **vLLM**: Perfect for dual-GPU setups. Point `AI_BASE_URL` to your vLLM endpoint.
 
 ### Remote Providers
 
 - **OpenAI**: Set `AI_BASE_URL` to `https://api.openai.com/v1` and provide your `AI_API_KEY`.
-- **Groq/Together/OpenRouter**: Point the base URL to their respective OpenAI-compatible endpoints.
+- **Groq/Together/OpenRouter/Gemini**: Point the base URL to their respective OpenAI-compatible endpoints.
 
 ## 🛠️ Usage
 
