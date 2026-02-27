@@ -18,6 +18,7 @@ load_dotenv()
 AI_BASE_URL = os.getenv("AI_BASE_URL", "http://localhost:11434/v1")
 AI_API_KEY = os.getenv("AI_API_KEY", "ollama")
 AI_MODEL = os.getenv("AI_MODEL", "llama3")
+ENABLE_CHAT_WIDGET = os.getenv("ENABLE_CHAT_WIDGET", "false").lower() == "true"
 
 app = FastAPI()
 client = AsyncOpenAI(base_url=AI_BASE_URL, api_key=AI_API_KEY)
@@ -29,7 +30,9 @@ brand_tasks: Dict[str, Any] = {}
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(
+        "index.html", {"request": request, "enable_chat": ENABLE_CHAT_WIDGET}
+    )
 
 
 @app.get("/docs/{doc_name}", response_class=HTMLResponse)

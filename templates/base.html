@@ -34,10 +34,12 @@
         {% block content %}{% endblock %}
     </main>
 
+    {% if enable_chat %}
     <!-- Floating Chat Widget Container -->
     <div id="chat-widget" class="fixed bottom-6 right-6 z-50">
         {% include 'partials/chat_widget.html' %}
     </div>
+    {% endif %}
 
     <footer class="mt-12 py-6 border-t border-gray-200 text-center text-gray-500 text-sm">
         &copy; 2026 10DLC Compliance Engine. Strictly TCR/CTIA Compliant.
