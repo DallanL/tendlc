@@ -2,21 +2,12 @@
 
 This document outlines the planned features and improvements for the 10DLC Pre-Vetting & Registration Portal.
 
-## 🚀 Phase 1: Security & Authentication (Near-Term)
-- [ ] **Multi-Tenant Authentication**: Implementation of a secure login system (OAuth2/JWT) to ensure only authorized customers can access the utility.
-- [ ] **User Management**: Admin dashboard to manage user access, organization profiles, and usage quotas.
-- [ ] **Data Encryption**: Encryption at rest for any sensitive brand identity information stored beyond the local session.
+## Security and Authentication
+- Implement security measures to prevent abusive applications and ensure only authorized users can access the utility.
 
-## 📈 Phase 2: Integration & Tracking (Mid-Term)
-- [ ] **Direct TCR/Sangoma Integration**: API integration to submit applications directly from the portal to The Campaign Registry or upstream CSPs.
-- [ ] **Application Status Tracking**: Real-time status updates from carriers (Pending, Approved, Rejected) visible directly in the dashboard.
-- [ ] **Document Storage**: Centralized repository for all submitted opt-in screenshots and compliant policy snapshots.
+## Integration and Tracking
+- Direct TCR Integration: API integration to submit and track applications directly with The Campaign Registry.
+- Netsapiens Platform Integration: Facilitate linking of registered brands and campaigns with existing customers on the Netsapiens platform.
 
-## 🧠 Phase 3: Advanced AI Capabilities (Long-Term)
-- [ ] **Competitor Benchmarking**: AI analysis comparing campaign effectiveness and compliance against industry standards.
-- [ ] **Automated Remediation**: One-click "Apply Fix" to automatically update website Privacy Policies via SFTP or API.
-- [ ] **Multi-Language Support**: Compliance vetting for non-English SMS campaigns.
-
-## 🛠️ Phase 4: Utility Enhancements
-- [ ] **Export to PDF**: Native PDF generation for formal compliance reporting.
-- [ ] **API Access**: Public API for programmatically triggering compliance audits from other internal systems.
+## Ongoing Compliance
+- Compliance Spot Checking: Implement periodic AI-driven spot checks of outbound messages to ensure continued adherence to TCR and CTIA standards.
