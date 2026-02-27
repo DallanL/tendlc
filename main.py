@@ -359,6 +359,8 @@ async def assist_cta_endpoint(
 async def assist_messages_endpoint(request: Request):
     form_data = await request.form()
     display_name = str(form_data.get("display_name") or "Brand")
+    vertical = str(form_data.get("vertical") or "Other")
+    description = str(form_data.get("description") or "")
     opt_in = str(form_data.get("subscriber_opt_in_keyword") or "START")
     opt_out = str(form_data.get("subscriber_opt_out_keyword") or "STOP")
     help_kw = str(form_data.get("subscriber_help_keyword") or "HELP")
@@ -366,7 +368,14 @@ async def assist_messages_endpoint(request: Request):
     embedded_phone = str(form_data.get("embedded_phone") or "no").upper()
 
     raw_json = await ai_utils.assist_messages(
-        display_name, opt_in, opt_out, help_kw, embedded_link, embedded_phone
+        display_name,
+        vertical,
+        description,
+        opt_in,
+        opt_out,
+        help_kw,
+        embedded_link,
+        embedded_phone,
     )
     try:
         msgs = json.loads(raw_json)

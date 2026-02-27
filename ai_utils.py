@@ -242,6 +242,8 @@ async def assist_use_case(current_text: str) -> str:
 
 async def assist_messages(
     display_name: str,
+    vertical: str,
+    description: str,
     opt_in: str,
     opt_out: str,
     help_kw: str,
@@ -252,6 +254,8 @@ async def assist_messages(
     prompt = prompts.MESSAGES_ASSIST_PROMPT.format(
         guidelines=guidelines,
         display_name=display_name,
+        vertical=vertical,
+        description=description,
         opt_in_keyword=opt_in,
         opt_out_keyword=opt_out,
         help_keyword=help_kw,

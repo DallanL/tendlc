@@ -166,6 +166,8 @@ MESSAGES_ASSIST_PROMPT = """
 Act as a 10DLC Compliance Expert. Generate exactly 5 distinct sample SMS messages.
 
 BRAND NAME: {display_name}
+VERTICAL: {vertical}
+CAMPAIGN DESCRIPTION: {description}
 OPT-IN KEYWORD: {opt_in_keyword}
 OPT-OUT KEYWORD: {opt_out_keyword}
 HELP KEYWORD: {help_keyword}
@@ -182,6 +184,7 @@ CONDITIONAL RULES:
 1. If EMBEDDED LINK ALLOWED is YES, you MAY include a branded URL in the message. If NO, do NOT include any URLs.
 2. If EMBEDDED PHONE ALLOWED is YES, you MAY include a contact phone number. If NO, do NOT include any phone numbers.
 3. Ensure every message starts with the Brand Name and ends with the mandatory help/stop disclosure exactly as formatted above.
+4. Ensure the content of the messages aligns with the VERTICAL and CAMPAIGN DESCRIPTION provided.
 
 OUTPUT INSTRUCTIONS:
 - Generate exactly 5 distinct messages.
