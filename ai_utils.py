@@ -76,6 +76,9 @@ async def scrape_privacy_policy(url: str) -> str:
 
 async def _extract_json(text: str) -> str:
     try:
+        match = re.search(r"\[.*\]", text, re.DOTALL)
+        if match:
+            return match.group(0)
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match:
             return match.group(0)
@@ -104,7 +107,9 @@ async def _analyze_document(website_text: str, doc_type: str, on_progress=None) 
     for i, chunk in enumerate(chunks):
         if on_progress:
             percent = int((i / (total_chunks + 1)) * 100)
-            await on_progress(f"Analyzing {doc_type} section {i+1}...", percent)
+            await on_progress(
+                f"Analyzing {doc_type} section {i+1} of {total_chunks}...", percent
+            )
 
         prompt = prompts.BRAND_SECTION_ANALYSIS_PROMPT.format(section_text=chunk)
         try:
@@ -243,7 +248,8 @@ async def assist_messages(current_text: str) -> str:
     response = await client.chat.completions.create(
         model=AI_MODEL, messages=[{"role": "user", "content": prompt}]
     )
-    return response.choices[0].message.content or ""
+    raw_content = response.choices[0].message.content or "[]"
+    return await _extract_json(raw_content)
 
 
 async def assist_cta(current_text: str, display_name: str, website: str) -> str:
@@ -256,14 +262,25 @@ async def assist_cta(current_text: str, display_name: str, website: str) -> str:
     return response.choices[0].message.content or ""
 
 
-async def assist_keyword_message(type: str, display_name: str, keyword: str) -> str:
-    prompt_tmpl = {
-        "opt_in": prompts.OPT_IN_ASSIST_PROMPT,
-        "opt_out": prompts.OPT_OUT_ASSIST_PROMPT,
-        "help": prompts.HELP_ASSIST_PROMPT,
-    }.get(type, prompts.HELP_ASSIST_PROMPT)
+async def assist_keyword_message(
+    type: str, display_name: str, opt_in: str, opt_out: str, help: str
+) -> str:
+    if type == "opt_in":
+        prompt = prompts.OPT_IN_ASSIST_PROMPT.format(
+            display_name=display_name,
+            opt_in_keyword=opt_in,
+            opt_out_keyword=opt_out,
+            help_keyword=help,
+        )
+    elif type == "opt_out":
+        prompt = prompts.OPT_OUT_ASSIST_PROMPT.format(
+            display_name=display_name, opt_out_keyword=opt_out
+        )
+    else:
+        prompt = prompts.HELP_ASSIST_PROMPT.format(
+            display_name=display_name, help_keyword=help, opt_out_keyword=opt_out
+        )
 
-    prompt = prompt_tmpl.format(display_name=display_name, keyword=keyword)
     response = await client.chat.completions.create(
         model=AI_MODEL, messages=[{"role": "user", "content": prompt}]
     )

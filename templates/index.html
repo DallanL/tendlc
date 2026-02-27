@@ -237,10 +237,10 @@
                             
                             <div id="{{ id }}-extra" class="pl-4 border-l-2 border-indigo-200 space-y-2 mt-2">
                                 <div class="grid grid-cols-3 gap-2">
-                                    <input type="text" name="{{ id }}_keyword" value="{{ def_keyword }}" class="col-span-1 rounded-md border-gray-300 shadow-sm sm:text-xs p-1 border" placeholder="Keyword">
+                                    <input type="text" id="{{ id }}-keyword" name="{{ id }}_keyword" value="{{ def_keyword }}" class="col-span-1 rounded-md border-gray-300 shadow-sm sm:text-xs p-1 border" placeholder="Keyword">
                                     <button type="button" 
                                             hx-post="/assist/attribute-message/{{ id.replace('subscriber_', '') }}" 
-                                            hx-include="#display-name, [name='{{ id }}_keyword']"
+                                            hx-include="#display-name, #subscriber_opt_in-keyword, #subscriber_opt_out-keyword, #subscriber_help-keyword"
                                             hx-swap="none"
                                             hx-on::after-request="if(event.detail.successful) document.getElementById('{{ id }}-msg').value = event.detail.xhr.responseText"
                                             hx-indicator="#{{ id }}-assist-spinner"
@@ -275,7 +275,7 @@
                         </label>
                         <button type="button" 
                                 hx-post="/assist/cta" 
-                                hx-include="#display-name, #privacy-url, #tos-url, #cta-flow, [name='subscriber_opt_in_keyword'], [name='subscriber_opt_out_keyword'], [name='subscriber_help_keyword']"
+                                hx-include="#display-name, [name='privacy_policy_url'], [name='terms_and_conditions_url'], #cta-flow, [name='subscriber_opt_in_keyword'], [name='subscriber_opt_out_keyword'], [name='subscriber_help_keyword']"
                                 hx-swap="none"
                                 hx-on::after-request="if(event.detail.successful) document.getElementById('cta-flow').value = event.detail.xhr.responseText"
                                 hx-indicator="#cta-assist-spinner"
@@ -315,14 +315,22 @@
                                 {% if i == 1 %}
                                 <button type="button" 
                                         hx-post="/assist/messages" 
-                                        hx-include="#display-name, #sample-msg-{{ i }}"
+                                        hx-include="#display-name"
                                         hx-swap="none"
-                                        hx-on::after-request="if(event.detail.successful) document.getElementById('sample-msg-{{ i }}').value = event.detail.xhr.responseText"
-                                        hx-indicator="#sample-{{ i }}-assist-spinner"
+                                        hx-on::after-request="if(event.detail.successful) {
+                                            try {
+                                                const msgs = JSON.parse(event.detail.xhr.responseText);
+                                                for(let k=1; k<=5; k++) {
+                                                    const el = document.getElementById('sample-msg-'+k);
+                                                    if(el && msgs[k-1]) el.value = msgs[k-1];
+                                                }
+                                            } catch(e) { console.error('Failed to parse messages:', e); }
+                                        }"
+                                        hx-indicator="#sample-1-assist-spinner"
                                         class="mt-2 text-xs font-bold text-indigo-600 hover:text-indigo-800 flex items-center flex-shrink-0">
                                     <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                                    Assist
-                                    <img id="sample-{{ i }}-assist-spinner" class="htmx-indicator ml-1 h-3 w-3 animate-spin" src="https://www.svgrepo.com/show/448500/loading.svg">
+                                    Assist All
+                                    <img id="sample-1-assist-spinner" class="htmx-indicator ml-1 h-3 w-3 animate-spin" src="https://www.svgrepo.com/show/448500/loading.svg">
                                 </button>
                                 {% endif %}
                             </div>
@@ -500,7 +508,6 @@
                     if (el.type === 'radio' || el.type === 'checkbox') {
                         if (el.value === value) {
                             el.checked = true;
-                            // Trigger dynamic visibility changes
                             if (el.onchange) el.onchange();
                         }
                     } else {
@@ -593,14 +600,12 @@
     document.addEventListener('DOMContentLoaded', () => {
         loadFormData();
         
-        // Auto-save on any input
         document.addEventListener('input', (e) => {
             if (e.target.closest('form')) {
                 saveFormData();
             }
         });
 
-        // Ensure AI Assist programmatic changes are also saved
         document.body.addEventListener('htmx:afterRequest', (e) => {
             if (e.detail.pathInfo && e.detail.pathInfo.requestPath.includes('/assist/')) {
                 saveFormData();

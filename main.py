@@ -4,7 +4,12 @@ import uuid
 import markdown
 from typing import Optional, Dict, Any
 from fastapi import FastAPI, Request, Form, UploadFile, File, BackgroundTasks
-from fastapi.responses import HTMLResponse, StreamingResponse, PlainTextResponse
+from fastapi.responses import (
+    HTMLResponse,
+    StreamingResponse,
+    PlainTextResponse,
+    JSONResponse,
+)
 from fastapi.templating import Jinja2Templates
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
@@ -151,19 +156,17 @@ async def evaluate_brand_status(request: Request, task_id: str):
 @app.post("/assist/attribute-message/{attr_type}")
 async def assist_attribute_message(request: Request, attr_type: str):
     form_data = await request.form()
-    display_name = str(form_data.get("display_name", ""))
+    display_name = str(form_data.get("display_name") or "Brand")
 
-    # Extract keyword from any field ending in _keyword
-    keyword = ""
-    for key, value in form_data.items():
-        if key.endswith("_keyword") and isinstance(value, str):
-            keyword = value
-            break
+    # Robust extraction of keywords
+    opt_in = str(form_data.get("subscriber_opt_in_keyword") or "START")
+    opt_out = str(form_data.get("subscriber_opt_out_keyword") or "STOP")
+    help_kw = str(form_data.get("subscriber_help_keyword") or "HELP")
 
-    print(
-        f"DEBUG: AI Assist requested for {attr_type}. Keyword: {keyword}, Brand: {display_name}"
+    print(f"DEBUG: AI Assist for {attr_type}. Keywords: {opt_in}/{opt_out}/{help_kw}")
+    message = await ai_utils.assist_keyword_message(
+        attr_type, display_name, opt_in, opt_out, help_kw
     )
-    message = await ai_utils.assist_keyword_message(attr_type, display_name, keyword)
     return PlainTextResponse(message)
 
 
@@ -348,7 +351,12 @@ async def assist_cta_endpoint(
 
 @app.post("/assist/messages")
 async def assist_messages_endpoint(sample_messages: str = Form("")):
-    return PlainTextResponse(await ai_utils.assist_messages(sample_messages))
+    raw_json = await ai_utils.assist_messages(sample_messages)
+    try:
+        msgs = json.loads(raw_json)
+        return JSONResponse(content=msgs)
+    except Exception:
+        return JSONResponse(content=[raw_json] + [""] * 4)
 
 
 if __name__ == "__main__":

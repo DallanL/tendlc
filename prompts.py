@@ -172,22 +172,24 @@ CURRENT MESSAGES:
 {current_text}
 
 OUTPUT INSTRUCTIONS:
-- Provide ONLY the sample messages.
-- One message per line.
-- Ensure each message has Brand ID and STOP language.
-- Do NOT include any introductory text, labels, or formatting like "1. Brand Identification".
+- Generate exactly 5 distinct sample messages.
+- Ensure each message has Brand ID and mention of how to get HELP and how to Opt-out (STOP).
+- RETURN ONLY a JSON array of 5 strings.
+  Example: ["Message 1 content", "Message 2 content", "Message 3 content", "Message 4 content", "Message 5 content"]
 """
 
 OPT_IN_ASSIST_PROMPT = """
 Act as a 10DLC Compliance Expert. Generate a compliant Opt-In confirmation message.
 Brand Name: {display_name}
-Keyword: {keyword}
+Opt-In Keyword: {opt_in_keyword}
+Opt-Out Keyword: {opt_out_keyword}
+Help Keyword: {help_keyword}
 
 Requirements:
 1. Identify the Brand.
-2. Confirm the subscription.
+2. Confirm the subscription for the specific keyword ({opt_in_keyword}).
 3. Mention "Message and data rates may apply".
-4. Provide STOP and HELP instructions.
+4. Provide {opt_out_keyword} and {help_keyword} instructions.
 
 Return ONLY the message text.
 """
@@ -195,11 +197,11 @@ Return ONLY the message text.
 OPT_OUT_ASSIST_PROMPT = """
 Act as a 10DLC Compliance Expert. Generate a compliant Opt-Out confirmation message.
 Brand Name: {display_name}
-Keyword: {keyword}
+Opt-Out Keyword: {opt_out_keyword}
 
 Requirements:
 1. Identify the Brand.
-2. Confirm no more messages will be sent.
+2. Confirm no more messages will be sent after receiving {opt_out_keyword}.
 
 Return ONLY the message text.
 """
@@ -207,12 +209,13 @@ Return ONLY the message text.
 HELP_ASSIST_PROMPT = """
 Act as a 10DLC Compliance Expert. Generate a compliant HELP response message.
 Brand Name: {display_name}
-Keyword: {keyword}
+Help Keyword: {help_keyword}
+Opt-Out Keyword: {opt_out_keyword}
 
 Requirements:
 1. Identify the Brand.
 2. Provide support contact info (email/link).
-3. Provide STOP instructions.
+3. Provide {opt_out_keyword} instructions.
 
 Return ONLY the message text.
 """
