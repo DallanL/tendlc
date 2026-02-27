@@ -49,8 +49,8 @@ To keep your data private and avoid API costs, use local inference servers:
 
 - **Ollama**:
   - `AI_BASE_URL=http://localhost:11434/v1`
-  - **Text Model**: `llama3` or `mistral` (Required for vetting/assistance).
-  - **Vision Model**: `llava` (Required for screenshot verification).
+  - **Text Model**: `qwen2.5:8b` or `qwen2.5:14b` (Highly recommended for strict instruction following).
+  - **Vision Model**: `llama3.2-vision:11b` (Required for screenshot verification).
 - **vLLM**: Perfect for dual-GPU setups. Point `AI_BASE_URL` to your vLLM endpoint.
 
 ### Remote Providers
