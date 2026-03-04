@@ -49,9 +49,15 @@ To keep your data private and avoid API costs, use local inference servers:
 
 - **Ollama**:
   - `AI_BASE_URL=http://localhost:11434/v1`
-  - **Text Model**: `qwen3:8b` or `qwen3:14b` (Highly recommended for strict instruction following).
+  - **Text Model**: `qwen2.5:1.5b` or `qwen2.5:7b` (Highly recommended for speed and strict instruction following).
   - **Vision Model**: `llama3.2-vision:11b` (Required for screenshot verification).
 - **vLLM**: Perfect for dual-GPU setups. Point `AI_BASE_URL` to your vLLM endpoint.
+
+### Debugging & Monitoring
+
+The portal includes detailed LLM statistics (duration, token counts, tokens/sec) for every call. To enable this output in your logs:
+1. Set `DEBUG=true` in your `.env`.
+2. Review the application logs (Uvicorn stdout or `docker logs`).
 
 ### Remote Providers
 

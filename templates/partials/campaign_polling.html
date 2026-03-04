@@ -1,0 +1,6 @@
+<div id="campaign-tracker-{{ task_id }}" 
+     hx-get="/evaluate/campaign/status/{{ task_id }}" 
+     hx-trigger="load, every 1s" 
+     hx-swap="outerHTML">
+    {% include 'partials/campaign_progress.html' %}
+</div>
