@@ -44,7 +44,9 @@ campaign_tasks: Dict[str, Any] = {}
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request):
     return templates.TemplateResponse(
-        "index.html", {"request": request, "enable_chat": ENABLE_CHAT_WIDGET}
+        request=request,
+        name="index.html",
+        context={"enable_chat": ENABLE_CHAT_WIDGET}
     )
 
 
@@ -62,9 +64,9 @@ async def serve_doc(request: Request, doc_name: str):
         html_content = markdown.markdown(text)
         title = safe_name.replace("_", " ").replace(".md", "").title()
         return templates.TemplateResponse(
-            "doc_view.html",
-            {
-                "request": request,
+            request=request,
+            name="doc_view.html",
+            context={
                 "content": html_content,
                 "title": title,
                 "raw_text": text,
@@ -148,7 +150,9 @@ async def evaluate_brand(
 
     background_tasks.add_task(run_analysis)
     return templates.TemplateResponse(
-        "partials/brand_polling.html", {"request": request, "task_id": task_id}
+        request=request,
+        name="partials/brand_polling.html",
+        context={"task_id": task_id}
     )
 
 
@@ -160,14 +164,15 @@ async def evaluate_brand_status(request: Request, task_id: str):
 
     if task["progress"] == 100 and task["results"]:
         return templates.TemplateResponse(
-            "partials/brand_report_multi.html",
-            {"request": request, "results": task["results"]},
+            request=request,
+            name="partials/brand_report_multi.html",
+            context={"results": task["results"]},
         )
 
     return templates.TemplateResponse(
-        "partials/brand_progress.html",
-        {
-            "request": request,
+        request=request,
+        name="partials/brand_progress.html",
+        context={
             "task_id": task_id,
             "status": task["status"],
             "progress": task["progress"],
@@ -299,7 +304,9 @@ async def evaluate_campaign(
 
     background_tasks.add_task(run_campaign_analysis)
     return templates.TemplateResponse(
-        "partials/campaign_polling.html", {"request": request, "task_id": task_id}
+        request=request,
+        name="partials/campaign_polling.html", 
+        context={"task_id": task_id}
     )
 
 
@@ -312,9 +319,9 @@ async def evaluate_campaign_status(request: Request, task_id: str):
     if task["progress"] == 100 and task["result"]:
         result = task["result"]
         return templates.TemplateResponse(
-            "partials/report_item.html",
-            {
-                "request": request,
+            request=request,
+            name="partials/report_item.html",
+            context={
                 "title": "Campaign Compliance Vetting",
                 "status": result.get("status", "Rejected"),
                 "feedback": result.get("feedback", "Review required."),
@@ -322,9 +329,9 @@ async def evaluate_campaign_status(request: Request, task_id: str):
         )
 
     return templates.TemplateResponse(
-        "partials/campaign_progress.html",
-        {
-            "request": request,
+        request=request,
+        name="partials/campaign_progress.html",
+        context={
             "task_id": task_id,
             "status": task["status"],
             "progress": task["progress"],
@@ -359,9 +366,9 @@ async def evaluate_opt_in(
         result_raw = await ai_utils.analyze_opt_in_web_form(opt_in_url, cta_flow)
     else:
         return templates.TemplateResponse(
-            "partials/report_item.html",
-            {
-                "request": request,
+            request=request,
+            name="partials/report_item.html",
+            context={
                 "title": "Opt-In Proof Vetting",
                 "status": "Rejected",
                 "feedback": "Provide upload or URL.",
@@ -374,9 +381,9 @@ async def evaluate_opt_in(
         result = {"status": "Rejected", "feedback": f"AI Error: {result_raw}"}
 
     return templates.TemplateResponse(
-        "partials/report_item.html",
-        {
-            "request": request,
+        request=request,
+        name="partials/report_item.html",
+        context={
             "title": "Opt-In Proof Vetting",
             "status": result.get("status", "Rejected"),
             "feedback": result.get("feedback", "Manual review recommended."),
