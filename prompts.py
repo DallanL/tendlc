@@ -58,10 +58,11 @@ CAMPAIGN DATA:
 STRICT VALIDATION RULES:
 1. **Description Check**: Verify the Description explicitly states what the messages are and who the audience is. Reject if vague.
 2. **CTA Flow Check**: Verify the CTA / Message Flow is a clear, step-by-step instructional path (e.g., "1. User goes to site..."). Reject if it lacks a specific path.
-3. **Attribute Cross-Check**:
+3. **Mandatory Disclosures Check**: Ensure the sample messages or CTA flow include "Message and data rates may apply" and "Message frequency varies" (or a specific frequency).
+4. **Attribute Cross-Check**:
    - If 'Embedded Link' is YES, at least one sample message MUST contain a URL.
    - If 'Embedded Phone Number' is YES, at least one sample message MUST contain a phone number.
-4. **High-Risk Vertical/Attribute Check**: If 'Direct Lending', 'Affiliate Marketing', or 'Age-Gated Content' is YES, the status MUST be 'Rejected' with feedback that it requires manual human review due to high-risk content.
+5. **High-Risk Vertical/Attribute Check**: If 'Direct Lending', 'Affiliate Marketing', or 'Age-Gated Content' is YES, the status MUST be 'Rejected' with feedback that it requires manual human review due to high-risk content.
 
 Return ONLY a JSON object with 'status' (Approved/Rejected) and 'feedback'.
 Example: {{"status": "Approved", "feedback": "Criteria met."}}
@@ -203,7 +204,7 @@ Help Keyword: {help_keyword}
 Requirements:
 1. Identify the Brand.
 2. Confirm the subscription for the specific keyword ({opt_in_keyword}).
-3. Mention "Message and data rates may apply".
+3. Mention "Message and data rates may apply" and "Message frequency varies".
 4. Provide {opt_out_keyword} and {help_keyword} instructions.
 
 Return ONLY the message text.
