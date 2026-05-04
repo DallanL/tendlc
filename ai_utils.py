@@ -14,7 +14,9 @@ import prompts
 load_dotenv()
 
 # Set up logging
-LOG_LEVEL = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
+LOG_LEVEL = (
+    logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
+)
 logging.basicConfig(level=LOG_LEVEL)
 logger = logging.getLogger(__name__)
 
@@ -80,12 +82,22 @@ def _get_guidelines(filename: str):
 
 async def scrape_privacy_policy(url: str):
     logger.debug(f"Attempting to scrape URL: {url}")
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
     try:
         async with httpx.AsyncClient(
-            timeout=10.0, follow_redirects=True
+            timeout=10.0, follow_redirects=True, headers=headers
         ) as httpx_client:
             response = await httpx_client.get(url)
             logger.debug(f"Initial response status: {response.status_code}")
+
+            if response.status_code != 200:
+                logger.error(
+                    f"Failed to fetch URL {url}: Status {response.status_code}"
+                )
+                return f"Error: Received status code {response.status_code} while fetching the URL."
+
             soup = BeautifulSoup(response.text, "html.parser")
             initial_text = soup.get_text()
 
@@ -126,6 +138,12 @@ async def scrape_privacy_policy(url: str):
 
                     logger.debug(f"Scraping policy URL: {policy_url}")
                     policy_response = await httpx_client.get(policy_url)
+                    if policy_response.status_code != 200:
+                        logger.error(
+                            f"Failed to fetch policy URL {policy_url}: Status {policy_response.status_code}"
+                        )
+                        return initial_text[:100000]
+
                     policy_soup = BeautifulSoup(policy_response.text, "html.parser")
                     return policy_soup.get_text()[:100000]
 
